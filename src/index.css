@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background-color: #F5F3EE;
+  color: #1B2333;
+  font-feature-settings: "ss01";
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid #8C3B2E;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Signature element: the "checked paper" corner-fold + stamp system,
+   used on Paper Cards and Paper Detail. A folded top-right corner
+   references the physical dog-eared exam paper; the stamp badge
+   references an examiner's verification mark. */
+.folio {
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+.folio::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 18px 18px 0;
+  border-color: transparent #DAD4C4 transparent transparent;
+  transition: border-color 150ms ease;
+}
+.folio:hover::after,
+.folio:focus-within::after {
+  border-color: transparent #C9A896 transparent transparent;
+}
+
+.ruled {
+  background-image: repeating-linear-gradient(to bottom, transparent, transparent 30px, rgba(27,35,51,0.05) 31px);
+}
+
+.margin-rule {
+  border-left: 2px solid #8C3B2E;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
