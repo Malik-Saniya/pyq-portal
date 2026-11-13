@@ -41,7 +41,8 @@ export default function Contact() {
           </label>
           <button type="submit" className="rounded-md bg-stamp px-5 py-2.5 text-sm font-medium text-white hover:bg-stamp-dark">
             Send
-          </button>
+          </button> 
+          {/* gggg */}
         </form>
       )}
     </div>
