@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import PaperCard from "../components/PaperCard";
@@ -8,6 +8,7 @@ import { levelLabel } from "../data/academicConfig";
 import { paperContextLine } from "../lib/format";
 import { useBookmarks } from "../lib/useBookmarks";
 import { pushRecent } from "../lib/storage";
+import { usePaperDownload } from "../lib/useDownloads";
 
 function metadataRows(paper) {
   const rows = [];
@@ -31,21 +32,7 @@ function metadataRows(paper) {
 }
 
 function DownloadAction({ paper }) {
-  const [state, setState] = useState("idle"); // idle | loading | success | error
-  const timer = useRef(null);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  function startDownload() {
-    if (paper.status !== "available") return;
-    setState("loading");
-    timer.current = setTimeout(() => {
-      // Deterministic mock: this is a prototype data layer with no real file,
-      // so downloads always resolve successfully unless the record itself
-      // is flagged unavailable/removed (handled above the fold instead).
-      setState("success");
-    }, 700);
-  }
+  const { state, start: startDownload } = usePaperDownload(paper);
 
   if (paper.status === "removed") {
     return (
@@ -86,7 +73,7 @@ function DownloadAction({ paper }) {
         <p className="mt-2 text-sm text-stamp">Something interrupted the download. <button onClick={startDownload} className="underline">Retry</button></p>
       )}
       {state === "success" && (
-        <p className="mt-2 text-sm text-pass">Saved to your device. Check your browser's downloads.</p>
+        <p className="mt-2 text-sm text-pass">Download started. Your browser saves the file — check its downloads.</p>
       )}
     </div>
   );

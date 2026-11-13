@@ -1,3 +1,6 @@
+*.docx
+*.pdf
+node_modules/
 # Logs
 logs
 *.log

@@ -46,7 +46,12 @@ export default function Search() {
   const { results, interpreted } = useMemo(() => {
     const extra = { ...filters };
     delete extra.level;
-    const r = query || Object.keys(filters).length > 0
+    // Level is applied as a post-filter below, so it must not by itself
+    // decide whether we run full-text search — otherwise picking only a
+    // level (no query, no other filter) fed an empty query + empty hints
+    // into searchPapers, which always returns zero candidates.
+    const hasQueryOrFilters = query || Object.keys(extra).length > 0;
+    const r = hasQueryOrFilters
       ? searchPapers(query, extra)
       : { results: PAPERS.filter((p) => (filters.level ? p.level === filters.level : true)), interpreted: { hints: {} } };
 
