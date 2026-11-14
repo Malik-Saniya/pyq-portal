@@ -27,11 +27,26 @@ function labelFor(key, value) {
   return value;
 }
 
+function filtersFromParams(params) {
+  const next = {};
+  const level = params.get("level");
+  if (level === "degree" || level === "hsc") next.level = level;
+  const stream = params.get("stream");
+  if (stream) next.stream = stream;
+  const standard = params.get("standard");
+  if (standard) next.standard = Number(standard);
+  const boardSlug = params.get("board");
+  if (boardSlug) next.boardSlug = boardSlug;
+  const academicYear = params.get("year");
+  if (academicYear) next.academicYear = academicYear;
+  return pruneHiddenFields(next);
+}
+
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
   const [inputValue, setInputValue] = useState(query);
-  const [filters, setFilters] = useState({}); // applied filters
+  const [filters, setFilters] = useState(() => filtersFromParams(params));
   const [sort, setSort] = useState("relevance");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -40,6 +55,15 @@ export default function Search() {
   useEffect(() => {
     setInputValue(query);
   }, [query]);
+
+  // Sync filter state when Explore / deep links change URL params
+  // (level, stream, standard) without a text query.
+  useEffect(() => {
+    const fromUrl = filtersFromParams(params);
+    if (Object.keys(fromUrl).length > 0) {
+      setFilters((prev) => ({ ...prev, ...fromUrl }));
+    }
+  }, [params]);
 
   useEffect(() => {
     setLoading(true);

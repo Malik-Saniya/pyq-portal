@@ -38,6 +38,9 @@ export default function Subject() {
           <p className="mt-1 text-xs text-ink-faint">
             {papers.length} paper{papers.length === 1 ? "" : "s"} available
             {subject.code ? ` • Subject code ${subject.code}` : ""}
+            {subject.level === "hsc" && subject.streams?.length
+              ? ` • ${subject.streams.join(", ")}`
+              : ""}
           </p>
         </div>
         <Link

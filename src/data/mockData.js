@@ -49,18 +49,60 @@ export const SUBJECTS = [
   { slug: "physics", name: "Physics", code: "USC101", courses: ["bsc"], level: "degree" },
   { slug: "chemistry", name: "Chemistry", code: "USC102", courses: ["bsc"], level: "degree" },
   { slug: "mathematics", name: "Mathematics", code: "USC103", courses: ["bsc"], level: "degree" },
-  // HSC — commerce
-  { slug: "book-keeping-accountancy", name: "Book Keeping & Accountancy", code: null, streams: ["Commerce"], level: "hsc" },
-  { slug: "organisation-of-commerce", name: "Organisation of Commerce", code: null, streams: ["Commerce"], level: "hsc" },
-  { slug: "secretarial-practice", name: "Secretarial Practice", code: null, streams: ["Commerce"], level: "hsc" },
-  // HSC — science
+
+  // -------------------------------------------------------------------------
+  // Junior College / HSC (MSBSHSE) — Class 11 & 12
+  // Source of truth: verified Maharashtra Board subject structure (Arts /
+  // Science / Commerce). Subjects apply to both standards unless noted.
+  // Qualifying institutional subjects (Environment & Water Security,
+  // Physical Education) are graded A–D and are omitted from this list.
+  // -------------------------------------------------------------------------
+
+  // Languages (available across streams; English compulsory)
+  { slug: "hsc-english", name: "English", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-marathi", name: "Marathi", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-hindi", name: "Hindi", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-urdu", name: "Urdu", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-gujarati", name: "Gujarati", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-kannada", name: "Kannada", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-sindhi", name: "Sindhi", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-sanskrit", name: "Sanskrit", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-persian", name: "Persian", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-pali", name: "Pali", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-ardhamagadhi", name: "Ardhamagadhi", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-french", name: "French", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-german", name: "German", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-russian", name: "Russian", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-japanese", name: "Japanese", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+
+  // Science stream — core
   { slug: "hsc-physics", name: "Physics", code: null, streams: ["Science"], level: "hsc" },
   { slug: "hsc-chemistry", name: "Chemistry", code: null, streams: ["Science"], level: "hsc" },
-  { slug: "hsc-mathematics", name: "Mathematics", code: null, streams: ["Science"], level: "hsc" },
-  { slug: "biology", name: "Biology", code: null, streams: ["Science"], level: "hsc" },
-  // HSC — arts
-  { slug: "history", name: "History", code: null, streams: ["Arts"], level: "hsc" },
-  { slug: "geography", name: "Geography", code: null, streams: ["Arts"], level: "hsc" },
+  { slug: "hsc-mathematics-statistics", name: "Mathematics & Statistics", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-biology", name: "Biology", code: null, streams: ["Science"], level: "hsc" },
+
+  // Science stream — optional / fourth elective
+  { slug: "hsc-information-technology", name: "Information Technology", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+  { slug: "hsc-computer-science", name: "Computer Science", code: null, streams: ["Science"], level: "hsc" },
+  { slug: "hsc-electronics", name: "Electronics", code: null, streams: ["Science"], level: "hsc" },
+  { slug: "hsc-geography", name: "Geography", code: null, streams: ["Science", "Arts"], level: "hsc" },
+  { slug: "hsc-economics", name: "Economics", code: null, streams: ["Science", "Commerce", "Arts"], level: "hsc" },
+
+  // Commerce stream — core
+  { slug: "hsc-book-keeping-accountancy", name: "Book Keeping & Accountancy", code: null, streams: ["Commerce"], level: "hsc" },
+  { slug: "hsc-organisation-of-commerce", name: "Organisation of Commerce and Management", code: null, streams: ["Commerce"], level: "hsc" },
+  { slug: "hsc-secretarial-practice", name: "Secretarial Practice", code: null, streams: ["Commerce"], level: "hsc" },
+  { slug: "hsc-co-operation", name: "Co-operation", code: null, streams: ["Commerce"], level: "hsc" },
+  { slug: "hsc-banking", name: "Banking", code: null, streams: ["Commerce"], level: "hsc" },
+  { slug: "hsc-marketing", name: "Marketing", code: null, streams: ["Commerce"], level: "hsc" },
+
+  // Arts / Humanities stream — core social sciences
+  { slug: "hsc-history", name: "History", code: null, streams: ["Arts"], level: "hsc" },
+  { slug: "hsc-political-science", name: "Political Science", code: null, streams: ["Arts"], level: "hsc" },
+  { slug: "hsc-sociology", name: "Sociology", code: null, streams: ["Arts"], level: "hsc" },
+  { slug: "hsc-psychology", name: "Psychology", code: null, streams: ["Arts"], level: "hsc" },
+  { slug: "hsc-logic", name: "Logic", code: null, streams: ["Arts"], level: "hsc" },
+  { slug: "hsc-philosophy", name: "Philosophy", code: null, streams: ["Arts"], level: "hsc" },
 ];
 
 function slugify(parts) {
@@ -166,13 +208,40 @@ SUBJECTS.filter((s) => s.slug === "physics" || s.slug === "chemistry").forEach((
   });
 });
 
-// HSC papers
-SUBJECTS.filter((s) => s.level === "hsc").forEach((subject) => {
+// HSC papers — only for core subjects that commonly have board PYQs.
+// Language and less-common elective subjects remain in SUBJECTS (for
+// navigation and empty states) but do not receive fabricated papers.
+const HSC_PAPER_SUBJECT_SLUGS = new Set([
+  "hsc-english",
+  "hsc-marathi",
+  "hsc-hindi",
+  "hsc-physics",
+  "hsc-chemistry",
+  "hsc-mathematics-statistics",
+  "hsc-biology",
+  "hsc-information-technology",
+  "hsc-computer-science",
+  "hsc-book-keeping-accountancy",
+  "hsc-organisation-of-commerce",
+  "hsc-secretarial-practice",
+  "hsc-economics",
+  "hsc-geography",
+  "hsc-history",
+  "hsc-political-science",
+  "hsc-sociology",
+  "hsc-psychology",
+]);
+
+SUBJECTS.filter((s) => s.level === "hsc" && HSC_PAPER_SUBJECT_SLUGS.has(s.slug)).forEach((subject) => {
   subject.streams.forEach((stream) => {
     [11, 12].forEach((standard) => {
       ["2025", "2024", "2023"].forEach((year) => {
         const seed = nextSeed();
         const board = BOARDS[0];
+        const isSciencePractical =
+          subject.slug === "hsc-physics" ||
+          subject.slug === "hsc-chemistry" ||
+          subject.slug === "hsc-biology";
         papers.push({
           id: `hsc-${slugify([subject.slug, stream, standard, year])}`,
           slug: slugify([subject.slug, stream, standard, year]),
@@ -191,7 +260,7 @@ SUBJECTS.filter((s) => s.level === "hsc").forEach((subject) => {
           academicYear: year,
           examType: "Board",
           scheme: null,
-          paperType: standard === 12 && (subject.slug.includes("physics") || subject.slug.includes("chemistry")) ? "Theory" : null,
+          paperType: isSciencePractical ? "Theory" : null,
           paperCode: null,
           language: "English",
           fileType: "PDF",
@@ -251,6 +320,13 @@ export function subjectsForLevel(levelKey) {
   return SUBJECTS.filter((s) => s.level === levelKey);
 }
 
+/** HSC subjects offered in a given stream (Science / Commerce / Arts). */
+export function subjectsForStream(stream) {
+  return SUBJECTS.filter(
+    (s) => s.level === "hsc" && Array.isArray(s.streams) && s.streams.includes(stream)
+  );
+}
+
 // --- Homepage sampling helpers -----------------------------------------
 // Home.jsx previously used PAPERS.slice(0,6) / SUBJECTS.slice(0,8). Because
 // generation above iterates subject-by-subject and year-by-year, a raw
@@ -268,7 +344,7 @@ const FEATURED_SUBJECT_SLUGS = [
   "mathematics", // B.Sc
   "political-science", // B.A.
   "hsc-physics", // HSC Science
-  "book-keeping-accountancy", // HSC Commerce
+  "hsc-book-keeping-accountancy", // HSC Commerce
 ];
 
 export function getFeaturedPapers(limit = 6) {

@@ -25,9 +25,13 @@ export function paperTitleSlugParts(paper) {
 // what this page covers before scanning the paper list.
 export function subjectBlurb(subject, papers) {
   if (papers.length === 0) {
-    return subject.level === "hsc"
-      ? "Board papers for this subject will appear here as they're added."
-      : "Papers for this subject will appear here as they're added.";
+    if (subject.level === "hsc") {
+      const streamLabel = subject.streams?.length
+        ? ` (${subject.streams.join(", ")})`
+        : "";
+      return `Board papers for this subject${streamLabel} will appear here as they're added. Class 11 and Class 12 share the same subject structure.`;
+    }
+    return "Papers for this subject will appear here as they're added.";
   }
   if (subject.level === "hsc") {
     const streams = [...new Set(papers.map((p) => p.stream))];
