@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { searchPapers, POPULAR_SEARCHES } from "../lib/search";
+import { applyFilters, countActive, pruneHiddenFields } from "../lib/filters";
 import { PAPERS, UNIVERSITIES, BOARDS, COURSES } from "../data/mockData";
 import PaperCard from "../components/PaperCard";
 import FilterPanel from "../components/FilterPanel";
@@ -21,6 +22,8 @@ function labelFor(key, value) {
   if (key === "semester") return `Semester ${value}`;
   if (key === "standard") return `${value}th`;
   if (key === "level") return value === "degree" ? "Degree / UG" : "Junior College";
+  if (key === "academicYear") return `Year ${value}`;
+  if (key === "examType") return `${value} exam`;
   return value;
 }
 
@@ -28,10 +31,11 @@ export default function Search() {
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
   const [inputValue, setInputValue] = useState(query);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({}); // applied filters
   const [sort, setSort] = useState("relevance");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const resultsTopRef = useRef(null);
 
   useEffect(() => {
     setInputValue(query);
@@ -43,25 +47,36 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [query, filters, sort]);
 
-  const { results, interpreted } = useMemo(() => {
-    const extra = { ...filters };
-    delete extra.level;
-    // Level is applied as a post-filter below, so it must not by itself
-    // decide whether we run full-text search — otherwise picking only a
-    // level (no query, no other filter) fed an empty query + empty hints
-    // into searchPapers, which always returns zero candidates.
-    const hasQueryOrFilters = query || Object.keys(extra).length > 0;
-    const r = hasQueryOrFilters
-      ? searchPapers(query, extra)
-      : { results: PAPERS.filter((p) => (filters.level ? p.level === filters.level : true)), interpreted: { hints: {} } };
+  // The text query ranks papers; the filters then narrow that list. Every
+  // selected filter must match (see applyFilters).
+  const runSearch = useCallback(
+    (activeFilters) => applyFilters(query ? searchPapers(query).results : PAPERS, activeFilters),
+    [query]
+  );
 
-    let list = r.results;
-    if (filters.level) list = list.filter((p) => p.level === filters.level);
-    if (sort === "newest") {
-      list = [...list].sort((a, b) => Number(b.academicYear) - Number(a.academicYear));
-    }
-    return { results: list, interpreted: r.interpreted };
-  }, [query, filters, sort]);
+  const results = useMemo(() => {
+    const list = runSearch(filters);
+    return sort === "newest" ? [...list].sort((a, b) => Number(b.academicYear) - Number(a.academicYear)) : list;
+  }, [runSearch, filters, sort]);
+
+  // Live "N papers match" preview for the unapplied draft in the panel.
+  const getCount = useCallback((draft) => runSearch(draft).length, [runSearch]);
+
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  // Applying from the panel: update the results and, if the student has
+  // scrolled past the top of the list, bring it back into view.
+  const handleApply = useCallback((next) => {
+    setFilters(next);
+    requestAnimationFrame(() => {
+      const el = resultsTopRef.current;
+      if (!el || el.getBoundingClientRect().top >= 72) return;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+    });
+  }, []);
+
+  const resetFilters = useCallback(() => setFilters({}), []);
 
   function submitSearch(e) {
     e.preventDefault();
@@ -71,10 +86,13 @@ export default function Search() {
   function removeFilter(key) {
     const next = { ...filters };
     delete next[key];
-    setFilters(next);
+    // Dropping the level also drops fields that only exist for that level,
+    // so no active filter is left hidden from the panel.
+    setFilters(key === "level" ? pruneHiddenFields(next) : next);
   }
 
   const activeFilterEntries = Object.entries(filters).filter(([, v]) => v !== undefined && v !== "");
+  const activeCount = countActive(filters);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -112,23 +130,25 @@ export default function Search() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[240px_1fr]">
-        <aside className="hidden md:block">
-          <div className="sticky top-24 rounded-card border border-paper-line bg-white p-4">
-            <FilterPanel filters={filters} onChange={setFilters} resultCount={results.length} />
-          </div>
+      <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[264px_minmax(0,1fr)]">
+        {/* Desktop filters: sticky under the header, and the panel scrolls
+            on its own (see FilterPanel) so it never outgrows the viewport. */}
+        <aside className="hidden md:sticky md:top-20 md:block md:self-start" aria-label="Filters">
+          <FilterPanel applied={filters} onApply={handleApply} onReset={resetFilters} getCount={getCount} />
         </aside>
 
         <div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div ref={resultsTopRef} className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setDrawerOpen(true)}
+                aria-haspopup="dialog"
                 className="flex items-center gap-1.5 rounded-md border border-paper-line bg-white px-3 py-2 text-sm font-medium text-ink-soft md:hidden"
               >
                 Filters
-                {activeFilterEntries.length > 0 && (
-                  <span className="rounded-full bg-stamp px-1.5 text-xs text-white">{activeFilterEntries.length}</span>
+                {activeCount > 0 && (
+                  <span className="rounded-full bg-stamp px-1.5 text-xs text-white">{activeCount}</span>
                 )}
               </button>
               <p className="text-sm text-ink-faint tabular">{loading ? "Searching…" : `${results.length} result${results.length === 1 ? "" : "s"}`}</p>
@@ -150,12 +170,19 @@ export default function Search() {
           </div>
 
           {activeFilterEntries.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Applied filters">
               {activeFilterEntries.map(([k, v]) => (
-                <Chip key={k} onRemove={() => removeFilter(k)}>
+                <Chip key={k} onRemove={() => removeFilter(k)} removeLabel={`Remove filter: ${labelFor(k, v)}`}>
                   {labelFor(k, v)}
                 </Chip>
               ))}
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="rounded-md px-2 py-1 text-sm font-medium text-ink-soft underline-offset-2 hover:text-stamp hover:underline"
+              >
+                Clear all
+              </button>
             </div>
           )}
 
@@ -183,10 +210,11 @@ export default function Search() {
 
       <FilterDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={closeDrawer}
         filters={filters}
-        onApply={setFilters}
-        resultCount={results.length}
+        onApply={handleApply}
+        onReset={resetFilters}
+        getCount={getCount}
       />
     </div>
   );

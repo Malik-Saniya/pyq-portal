@@ -1,57 +1,67 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import FilterPanel from "./FilterPanel";
 
-export default function FilterDrawer({ open, onClose, filters, onApply, resultCount }) {
-  const [draft, setDraft] = useState(filters);
+// Mobile bottom sheet. It only owns the sheet behaviour (backdrop, Escape,
+// body scroll lock, focus); the filter UI itself is the shared FilterPanel.
+// The panel mounts only while open, so its draft always starts from the
+// currently applied filters.
+export default function FilterDrawer({ open, onClose, filters, onApply, onReset, getCount }) {
+  const sheetRef = useRef(null);
+  // Search passes a new onClose on some renders; reading it through a ref
+  // keeps the effect below from tearing down and re-locking the page.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
-    if (open) setDraft(filters);
-  }, [open, filters]);
+    if (!open) return undefined;
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
+    const previouslyFocused = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    sheetRef.current?.focus();
+
+    const onKey = (e) => {
+      if (e.key === "Escape") onCloseRef.current();
+    };
+    // The sheet is mobile-only; if the window grows past the md breakpoint
+    // (rotation, resize) close it instead of leaving the page scroll-locked.
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onBreakpoint = (e) => {
+      if (e.matches) onCloseRef.current();
+    };
+
+    window.addEventListener("keydown", onKey);
+    mq.addEventListener("change", onBreakpoint);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      mq.removeEventListener("change", onBreakpoint);
+      document.body.style.overflow = previousOverflow;
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Filters">
-      <button
-        className="absolute inset-0 bg-ink/40"
-        aria-label="Close filters"
-        onClick={onClose}
-      />
-      <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-hidden rounded-t-2xl bg-paper p-4 shadow-raised">
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-paper-line" aria-hidden="true" />
-        <div className="max-h-[65vh] overflow-y-auto">
-          <FilterPanel filters={draft} onChange={setDraft} resultCount={resultCount} />
-        </div>
-        <div className="mt-3 flex gap-2 border-t border-paper-line pt-3">
-          <button
-            type="button"
-            onClick={() => setDraft({})}
-            className="flex-1 rounded-md border border-paper-line px-4 py-2.5 text-sm font-medium text-ink-soft"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onApply(draft);
-              onClose();
-            }}
-            className="flex-1 rounded-md bg-stamp px-4 py-2.5 text-sm font-medium text-white"
-          >
-            Show results
-          </button>
-        </div>
+      <div className="fade-in absolute inset-0 bg-ink/40" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={sheetRef}
+        tabIndex={-1}
+        className="sheet-in absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-2xl bg-white shadow-raised outline-none"
+      >
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-paper-line" aria-hidden="true" />
+        <FilterPanel
+          variant="drawer"
+          applied={filters}
+          onApply={onApply}
+          onApplied={onClose}
+          onReset={onReset}
+          onClose={onClose}
+          getCount={getCount}
+        />
       </div>
     </div>
   );
