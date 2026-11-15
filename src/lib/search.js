@@ -10,6 +10,21 @@ const ALIASES = {
   fybcom: { courseSlug: "bcom", semester: 1 },
   sybcom: { courseSlug: "bcom", semester: 3 },
   tybcom: { courseSlug: "bcom", semester: 5 },
+  fybaf: { courseSlug: "baf", semester: 1 },
+  sybaf: { courseSlug: "baf", semester: 3 },
+  tybaf: { courseSlug: "baf", semester: 5 },
+  fybms: { courseSlug: "bms", semester: 1 },
+  sybms: { courseSlug: "bms", semester: 3 },
+  tybms: { courseSlug: "bms", semester: 5 },
+  fybbi: { courseSlug: "bbi", semester: 1 },
+  sybbi: { courseSlug: "bbi", semester: 3 },
+  tybbi: { courseSlug: "bbi", semester: 5 },
+  fyit: { courseSlug: "bsc-it", semester: 1 },
+  syit: { courseSlug: "bsc-it", semester: 3 },
+  tyit: { courseSlug: "bsc-it", semester: 5 },
+  fycs: { courseSlug: "bsc-cs", semester: 1 },
+  sycs: { courseSlug: "bsc-cs", semester: 3 },
+  tycs: { courseSlug: "bsc-cs", semester: 5 },
   hsc: { level: "hsc" },
   "12th": { standard: 12 },
   "11th": { standard: 11 },
@@ -29,6 +44,16 @@ const STD_RE = /\b(11|12)th\b/i;
 
 function norm(s) {
   return (s || "").toString().toLowerCase().trim();
+}
+
+function escapeRe(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Whole-word containment, so short names like "ba" don't match inside
+// "database" and "bbi" doesn't match inside a longer word.
+function hasWord(text, needle) {
+  return new RegExp(`(^|[^a-z0-9])${escapeRe(needle)}($|[^a-z0-9])`).test(text);
 }
 
 /**
@@ -91,11 +116,15 @@ export function interpretQuery(raw) {
     }
   });
 
+  // Several courses can match (e.g. "bsc it" also contains "bsc"); the longest
+  // matching name wins so "B.Sc. IT" is never read as plain "B.Sc.".
+  let bestCourse = null;
   COURSES.forEach((c) => {
-    if (remainder.includes(c.slug.replace("-", " ")) || remainder.includes(c.name.toLowerCase())) {
-      hints.courseSlug = c.slug;
-    }
+    const needles = [c.slug.replace(/-/g, " "), c.name.toLowerCase()];
+    const hit = needles.filter((n) => hasWord(remainder, n)).sort((a, b) => b.length - a.length)[0];
+    if (hit && (!bestCourse || hit.length > bestCourse.length)) bestCourse = { slug: c.slug, length: hit.length };
   });
+  if (bestCourse) hints.courseSlug = bestCourse.slug;
 
   remainder = remainder.replace(/\s+/g, " ").trim();
 
@@ -168,10 +197,57 @@ export function searchPapers(query, extraFilters = {}) {
   };
 }
 
+// Syllabus subjects (ones that carry a courseSlug) matching a query, for the
+// "no papers found" state. Subjects have no papers of their own here — this
+// only helps the student find where a subject sits in the syllabus.
+const COURSE_BY_SLUG = new Map(COURSES.map((c) => [c.slug, c]));
+const SUBJECT_STOPWORDS = new Set(["pyq", "pyqs", "paper", "papers", "question", "questions", "qp", "previous", "year", "exam", "the", "of", "for"]);
+
+export function searchSyllabusSubjects(query, filters = {}, limit = 12) {
+  const none = { items: [], total: 0 };
+  const { keywords, hints } = interpretQuery(query);
+
+  // HSC / board filters, or paper-only filters (year, exam type, language),
+  // describe papers, not syllabus subjects — don't pretend they apply.
+  if (filters.level === "hsc" || filters.boardSlug || filters.stream || filters.standard) return none;
+  if (filters.academicYear || filters.examType || filters.language) return none;
+  if (hints.level === "hsc" || hints.boardSlug || hints.standard) return none;
+
+  const f = { ...hints, ...filters };
+  const tokens = keywords.split(" ").filter((t) => t && !SUBJECT_STOPWORDS.has(t));
+  if (tokens.length === 0 && !f.courseSlug) return none;
+
+  const phrase = tokens.join(" ");
+  const matches = [];
+  SUBJECTS.forEach((s) => {
+    if (!s.courseSlug) return;
+    if (f.universitySlug && s.universitySlug !== f.universitySlug) return;
+    if (f.courseSlug && s.courseSlug !== f.courseSlug) return;
+    if (f.semester !== undefined && s.semester !== Number(f.semester)) return;
+    if (f.scheme && s.scheme !== f.scheme) return;
+
+    const course = COURSE_BY_SLUG.get(s.courseSlug);
+    const hay = norm(
+      [s.name, course?.name, course?.shortName, s.courseSlug.replace(/-/g, " "), s.discipline, s.specialization].join(" ")
+    );
+    const ok = tokens.every((t) => (t.length < 3 ? hasWord(hay, t) : hay.includes(t)));
+    if (ok) matches.push({ subject: s, rank: phrase && norm(s.name).includes(phrase) ? 0 : 1 });
+  });
+
+  matches.sort((a, b) => a.rank - b.rank);
+  return { items: matches.slice(0, limit).map((m) => m.subject), total: matches.length };
+}
+
 export function autocompleteSuggestions(query, limit = 6) {
   const q = norm(query);
   if (!q) return [];
-  const subjectMatches = SUBJECTS.filter((s) => norm(s.name).includes(q)).map((s) => ({
+  // Several courses share subject names (e.g. "Data Structures"); suggest each name once.
+  const seenSubjectNames = new Set();
+  const subjectMatches = SUBJECTS.filter((s) => {
+    if (!norm(s.name).includes(q) || seenSubjectNames.has(norm(s.name))) return false;
+    seenSubjectNames.add(norm(s.name));
+    return true;
+  }).map((s) => ({
     type: "subject",
     label: s.name,
     value: s.name,
@@ -191,7 +267,8 @@ export function autocompleteSuggestions(query, limit = 6) {
 
 export const POPULAR_SEARCHES = [
   "Java Sem 3",
-  "BCom Sem 3 Financial Accounting",
+  "BCom Sem 3 Accountancy",
+  "BSc IT Python",
   "HSC Physics 2025",
   "FYBSc Maths",
   "BCS-304",

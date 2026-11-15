@@ -48,3 +48,22 @@ export const ACADEMIC_YEARS = ["2025", "2024", "2023", "2022", "2021"];
 export function levelLabel(levelKey) {
   return LEVELS[levelKey]?.label ?? levelKey;
 }
+// NEP 2020 subject baskets, in the order they are shown on a Course page.
+// Labels follow the "Standard NEP Subject Basket Classifications" in the
+// University of Mumbai syllabus dataset.
+export const NEP_CATEGORIES = [
+  { key: "MAJOR", label: "Major (DSC / DSE)" },
+  { key: "PRACTICAL", label: "Practical" },
+  { key: "MINOR", label: "Minor" },
+  { key: "OE", label: "Open Elective" },
+  { key: "VSC", label: "Vocational Skill Course" },
+  { key: "SEC", label: "Skill Enhancement Course" },
+  { key: "AEC", label: "Ability Enhancement Course" },
+  { key: "VEC", label: "Value Education Course" },
+  { key: "IKS", label: "Indian Knowledge System" },
+  { key: "PROJECT", label: "Project / Field Work" },
+];
+
+export function nepCategoryLabel(key) {
+  return NEP_CATEGORIES.find((c) => c.key === key)?.label ?? key;
+}

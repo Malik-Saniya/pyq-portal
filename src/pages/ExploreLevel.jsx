@@ -1,14 +1,13 @@
 import { useParams, Link, Navigate } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import { LEVELS, STREAMS, STANDARDS } from "../data/academicConfig";
-import { COURSES, UNIVERSITIES, BOARDS, subjectsForLevel, subjectsForStream } from "../data/mockData";
-
+import { COURSES, UNIVERSITIES, BOARDS, browsableSubjects } from "../data/mockData";
 export default function ExploreLevel() {
   const { level } = useParams();
   const config = LEVELS[level];
   if (!config) return <Navigate to="/explore/degree" replace />;
 
-  const subjects = subjectsForLevel(level);
+ const subjects = browsableSubjects(level);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -18,8 +17,7 @@ export default function ExploreLevel() {
 
       {level === "degree" ? (
         <section className="mt-8">
-          <h2 className="font-display text-lg font-semibold text-ink">Browse by university</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className="font-display text-lg font-semibold text-ink">Subjects with papers</h2>          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {UNIVERSITIES.map((u) => (
               <div key={u.slug} className="rounded-card border border-paper-line bg-white p-4">
                 <h3 className="font-medium text-ink">{u.name}</h3>
@@ -27,8 +25,7 @@ export default function ExploreLevel() {
                   {COURSES.filter((c) => c.university === u.slug).map((c) => (
                     <li key={c.slug}>
                       <Link
-                        to={`/search?q=${encodeURIComponent(c.name)}`}
-                        className="text-sm text-ink-soft hover:text-stamp"
+                        to={c.hasSyllabus ? `/course/${c.slug}` : `/search?q=${encodeURIComponent(c.name)}`}                        className="text-sm text-ink-soft hover:text-stamp"
                       >
                         {c.name}
                       </Link>

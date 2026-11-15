@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Search from "./pages/Search";
 import ExploreLevel from "./pages/ExploreLevel";
 import Subject from "./pages/Subject";
+import Course from "./pages/Course";
 import PaperDetail from "./pages/PaperDetail";
 import Library from "./pages/Library";
 import About from "./pages/About";
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="search" element={<Search />} />
           <Route path="explore" element={<Navigate to="/explore/degree" replace />} />
           <Route path="explore/:level" element={<ExploreLevel />} />
+          <Route path="course/:courseSlug" element={<Course />} />
           <Route path="subject/:subjectSlug" element={<Subject />} />
           <Route path="paper/:paperSlug" element={<PaperDetail />} />
           <Route path="library" element={<Library />} />
