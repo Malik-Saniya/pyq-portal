@@ -24,6 +24,19 @@ export const LEVELS = {
     cardSecondary: ["stream", "standard"],
     description: "Board papers organized by board, stream and standard (11th / 12th).",
   },
+  // School: Maharashtra State Board, SSC Class 10 (see data/sscData.js).
+  // Browsed from /school, not /explore/:level, and not (yet) a Search filter
+  // level — hence searchable: false (FilterPanel only lists searchable levels).
+  school: {
+    key: "school",
+    label: "School",
+    shortLabel: "School",
+    searchable: false,
+    topSelector: ["board", "exam", "class"],
+    filterFields: ["academicYear"],
+    cardSecondary: ["board", "class"],
+    description: "Board papers for Maharashtra State Board SSC Class 10, organized by subject and academic year.",
+  },
 };
 
 // Paper Scope — a system field (Section C.2). Students never answer

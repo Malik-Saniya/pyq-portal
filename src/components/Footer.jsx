@@ -6,6 +6,7 @@ const COLUMNS = [
     links: [
       { to: "/explore/degree", label: "Degree / UG" },
       { to: "/explore/hsc", label: "Junior College" },
+      { to: "/school", label: "School" },
       { to: "/search", label: "Search papers" },
     ],
   },

@@ -35,6 +35,7 @@ function IconBookmark(props) {
 const NAV_LINKS = [
   { to: "/explore/degree", label: "Degree / UG" },
   { to: "/explore/hsc", label: "Junior College" },
+  { to: "/school", label: "School" },
   { to: "/about", label: "About" },
 ];
 

@@ -16,7 +16,9 @@ import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
-import ContentPolicy from "./pages/ContentPolicy";
+import School from "./pages/School";
+import SchoolClass from "./pages/SchoolClass";
+import SchoolSubject from "./pages/SchoolSubject";import ContentPolicy from "./pages/ContentPolicy";
 import NotFound from "./pages/NotFound";
 
 function Layout() {
@@ -46,7 +48,13 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="search" element={<Search />} />
           <Route path="explore" element={<Navigate to="/explore/degree" replace />} />
+          <Route path="explore/school" element={<Navigate to="/school" replace />} />
           <Route path="explore/:level" element={<ExploreLevel />} />
+          <Route path="school" element={<School />} />
+          <Route path="school/maharashtra-board" element={<Navigate to="/school/maharashtra-board/ssc/class-10" replace />} />
+          <Route path="school/maharashtra-board/ssc" element={<Navigate to="/school/maharashtra-board/ssc/class-10" replace />} />
+          <Route path="school/maharashtra-board/ssc/class-10" element={<SchoolClass />} />
+          <Route path="school/maharashtra-board/ssc/class-10/:subjectSlug" element={<SchoolSubject />} />
           <Route path="course/:courseSlug" element={<Course />} />
           <Route path="subject/:subjectSlug" element={<Subject />} />
           <Route path="paper/:paperSlug" element={<PaperDetail />} />

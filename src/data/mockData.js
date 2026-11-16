@@ -1,6 +1,6 @@
 import { EXAM_TYPES, SCHEMES, LANGUAGES } from "./academicConfig";
 import { MU_UNIVERSITY, MU_COURSES, MU_SUBJECTS } from "./universities/mu";
-
+import { SSC_PAPERS } from "./sscData";
 // --- Reusable entities (Section 11 of the working brief: these are data,
 // never hardcoded into navigation or components) ---------------------------
 
@@ -209,7 +209,9 @@ papers = papers.map((p) => ({ ...p, status: "available" }));
 if (papers[3]) papers[3] = { ...papers[3], status: "unavailable" };
 if (papers[9]) papers[9] = { ...papers[9], status: "removed" };
 
-export const PAPERS = papers;
+// School (SSC Class 10) papers come from sscData.js and are appended after the
+// generated ones, so the indexed status flags above are unaffected.
+export const PAPERS = [...papers, ...SSC_PAPERS];
 
 export function getPaperBySlug(slug) {
   return PAPERS.find((p) => p.slug === slug);

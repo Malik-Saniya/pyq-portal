@@ -4,8 +4,7 @@ import Breadcrumbs from "../components/Breadcrumbs";
 import PaperCard from "../components/PaperCard";
 import Badge from "../components/Badge";
 import { getPaperBySlug, getRelatedPapers } from "../data/mockData";
-import { levelLabel } from "../data/academicConfig";
-import { paperContextLine } from "../lib/format";
+import { paperContextLine, paperBreadcrumbs, paperSubjectPath } from "../lib/format";
 import { useBookmarks } from "../lib/useBookmarks";
 import { pushRecent } from "../lib/storage";
 import { usePaperDownload } from "../lib/useDownloads";
@@ -39,7 +38,7 @@ function DownloadAction({ paper }) {
       <div className="rounded-md border border-stamp/30 bg-stamp-light p-4 text-sm text-stamp-dark">
         <p className="font-medium">This paper was removed.</p>
         <p className="mt-1 text-stamp-dark/80">It was taken down for a content-quality or rights reason.</p>
-        <Link to={`/subject/${paper.subject.slug}`} className="mt-3 inline-block text-sm font-medium underline">
+        <Link to={paperSubjectPath(paper)} className="mt-3 inline-block text-sm font-medium underline">
           See other {paper.subject.name} papers
         </Link>
       </div>
@@ -95,14 +94,7 @@ export default function PaperDetail() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <Breadcrumbs
-        items={[
-          { to: "/", label: "Home" },
-          { to: `/explore/${paper.level}`, label: levelLabel(paper.level) },
-          { to: `/subject/${paper.subject.slug}`, label: paper.subject.name },
-          { label: `${paper.academicYear}` },
-        ]}
-      />
+      <Breadcrumbs items={paperBreadcrumbs(paper)} />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         <div>

@@ -8,6 +8,7 @@ import PaperCard from "../components/PaperCard";
 const QUICK_ACCESS = [
   { to: "/explore/degree", label: "Degree / UG", icon: "🎓", desc: "University & college papers" },
   { to: "/explore/hsc", label: "Junior College / HSC", icon: "📘", desc: "Board papers by stream" },
+  { to: "/school", label: "School", icon: "🏫", desc: "Maharashtra Board · SSC Class 10" },
 ];
 
 function recentPapers() {
@@ -90,7 +91,7 @@ export default function Home() {
           <h2 id="quick-access-heading" className="font-display text-xl font-semibold text-ink">
             Browse by academic level
           </h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"> 
             {QUICK_ACCESS.map((q) => (
               <Link
                 key={q.to}

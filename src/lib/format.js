@@ -1,7 +1,14 @@
+import { levelLabel } from "../data/academicConfig";
+import { SSC_BASE_PATH, SSC_CLASS_10, sscSubjectPath } from "../data/sscData";
+
 // Scope-aware secondary line for a Paper Card (Section I.1 of the blueprint):
 // College/Institution is shown only when it disambiguates; inside a single
 // context it would be redundant.
 export function paperContextLine(paper) {
+  if (paper.level === "school") {
+    const exam = paper.school ? `${paper.school.exam} Class ${paper.school.classNumber}` : null;
+    return [paper.board?.name, exam].filter(Boolean).join(" • ");
+  }
   if (paper.level === "hsc") {
     return [paper.stream, `Std ${paper.standard}`, paper.board?.name].filter(Boolean).join(" • ");
   }
@@ -10,6 +17,32 @@ export function paperContextLine(paper) {
   else if (paper.scope === "institution" && paper.institution) parts.push(paper.institution.name);
   else if (paper.university) parts.push(paper.university.name);
   return parts.filter(Boolean).join(" • ");
+}
+
+// Where "all papers of this subject" lives. School subjects have their own
+// route; Degree / HSC subjects use /subject/:slug.
+export function paperSubjectPath(paper) {
+  return paper.level === "school" && paper.school
+    ? sscSubjectPath(paper.school.subjectSlug)
+    : `/subject/${paper.subject.slug}`;
+}
+
+export function paperBreadcrumbs(paper) {
+  if (paper.level === "school") {
+    return [
+      { to: "/", label: "Home" },
+      { to: "/school", label: "School" },
+      { to: SSC_BASE_PATH, label: SSC_CLASS_10.label },
+      { to: paperSubjectPath(paper), label: paper.subject.name },
+      { label: `${paper.academicYear}` },
+    ];
+  }
+  return [
+    { to: "/", label: "Home" },
+    { to: `/explore/${paper.level}`, label: levelLabel(paper.level) },
+    { to: paperSubjectPath(paper), label: paper.subject.name },
+    { label: `${paper.academicYear}` },
+  ];
 }
 
 export function paperExamLine(paper) {
