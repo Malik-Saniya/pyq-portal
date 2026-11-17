@@ -129,7 +129,7 @@ subject.courses.forEach((courseSlug) => {
           examType,
           scheme,
           paperType: examType === "Practical" ? "Practical" : "Theory",
-          paperCode: subject.code ?
+          paperCode: subject.code || null,
           language: "English",
           fileType: "PDF",
           pageCount: 4 + (seed % 5),
