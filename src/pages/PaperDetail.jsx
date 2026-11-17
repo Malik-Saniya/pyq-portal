@@ -58,7 +58,7 @@ function DownloadAction({ paper }) {
   }
 
   return (
-    <div id="download">
+    <div id="download" className="scroll-mt-20">
       <div className="flex flex-wrap gap-3">
         <button
           onClick={startDownload}
@@ -132,8 +132,9 @@ export default function PaperDetail() {
             </div>
 
             <div className="mt-6">
-              <DownloadAction paper={paper} />
-            </div>
+
+              <DownloadAction key={paper.id} paper={paper} />
+           </div>
           </div>
 
           {/* Full metadata */}

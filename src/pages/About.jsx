@@ -12,6 +12,7 @@ export default function About() {
         Degree/UG papers by university, course, semester and academic year, and Junior
         College/HSC papers by board, stream and standard — with consistent metadata so you
         always know exactly what you're opening before you download it.
+        Maharashtra State Board (SSC Class 10) — with consistent metadata so yo
       </p>
       <h2>What we don't do</h2>
       <p>

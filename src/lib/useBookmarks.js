@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getBookmarks, toggleBookmark } from "./storage";
 
 export function useBookmarks() {
-  const [bookmarks, setBookmarks] = useState(getBookmarks());
+  const [bookmarks, setBookmarks] = useState(getBookmarks)
 
   useEffect(() => {
     const onChange = () => setBookmarks(getBookmarks());

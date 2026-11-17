@@ -1,16 +1,14 @@
-# React + Vite
+# PYQ Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Previous-year question paper discovery for Degree/UG, Junior College/HSC and School (SSC) students.
 
-Currently, two official plugins are available:
+Stack: Vite + React + React Router + Tailwind CSS. No backend or auth; data is mock/syllabus data in `src/data`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+    npm install
+    npm run dev      # local dev server
+    npm run build    # production build
+    npm run lint     # oxlint
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Key files: `src/data/academicConfig.js` (levels), `src/data/mockData.js` (papers),
+`src/data/sscData.js` (School), `src/data/universities/mu.js` (Mumbai NEP syllabus),
+`src/lib/search.js` (query parsing + ranking), `src/lib/filters.js` (filter panel logic).

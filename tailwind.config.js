@@ -36,9 +36,7 @@ export default {
         card: "0 1px 2px rgba(27,35,51,0.06), 0 1px 0 rgba(27,35,51,0.04)",
         raised: "0 4px 16px rgba(27,35,51,0.10)",
       },
-      backgroundImage: {
-        'rule-lines': 'repeating-linear-gradient(to bottom, transparent, transparent 27px, rgba(27,35,51,0.05) 28px)',
-      },
+      
     },
   },
   plugins: [],

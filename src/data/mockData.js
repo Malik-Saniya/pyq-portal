@@ -1,4 +1,4 @@
-import { EXAM_TYPES, SCHEMES, LANGUAGES } from "./academicConfig";
+import { EXAM_TYPES } from "./academicConfig";
 import { MU_UNIVERSITY, MU_COURSES, MU_SUBJECTS } from "./universities/mu";
 import { SSC_PAPERS } from "./sscData";
 // --- Reusable entities (Section 11 of the working brief: these are data,
@@ -92,20 +92,24 @@ function pick(arr, seed) {
 // Degree papers (mock). Syllabus-backed subjects (subject.source) get NO
 // generated papers: a subject existing in the syllabus must never imply that a
 // paper exists. Real papers for them will be added as real PAPERS records.
+const DEGREE_EXAM_TYPES = EXAM_TYPES.filter((t) => t !== "Board");
 SUBJECTS.filter((s) => s.level === "degree" && !s.source).forEach((subject) => {
-  subject.courses.forEach((courseSlug) => {
+subject.courses.forEach((courseSlug) => {
     const course = courseFor(courseSlug);
     if (!course) return;
     const semesters = [1, 2, 3, 4].filter((s) => s <= course.semesters);
-    semesters.slice(0, 2).forEach((semester, i) => {
-      ["2024", "2023", "2022"].forEach((year, yi) => {
+  semesters.slice(0, 2).forEach((semester) => {
+
+    ["2024", "2023", "2022"].forEach((year, yi) => {
         const seed = nextSeed();
-        const isCollegeScope = seed % 5 === 0; // occasional college-specific paper
+        const collegesHere = COLLEGES.filter((c) => c.university === course.university);
+        const isCollegeScope = seed % 5 === 0 && collegesHere.length > 0;
         const scope = isCollegeScope ? "college" : "university";
-        const college = isCollegeScope ? pick(COLLEGES.filter(c => c.university === course.university), seed) : null;
+        const college = isCollegeScope ? pick(collegesHere, seed) : null;
         const university = UNIVERSITIES.find((u) => u.slug === course.university);
         const scheme = seed % 3 === 0 ? "NEP 2020" : yi === 2 ? "CBCS" : "NEP 2020";
-        const examType = yi === 0 ? "Regular" : pick(EXAM_TYPES, seed);
+        const examType = yi === 0 ? "Regular" : DEGREE_EXAM_TYPES[(semester + yi) % DEGREE_EXAM_TYPES.length];
+
         papers.push({
           id: `deg-${slugify([subject.slug, course.slug, "s" + semester, year])}`,
           slug: slugify([subject.slug, course.slug, "sem", semester, year]),
@@ -124,9 +128,9 @@ SUBJECTS.filter((s) => s.level === "degree" && !s.source).forEach((subject) => {
           academicYear: year,
           examType,
           scheme,
-          paperType: "Theory",
-          paperCode: subject.code ? `${subject.code}-${year.slice(2)}` : null,
-          language: pick(LANGUAGES, seed) === "Marathi" && subject.level === "degree" ? "English" : "English",
+          paperType: examType === "Practical" ? "Practical" : "Theory",
+          paperCode: subject.code ?
+          language: "English",
           fileType: "PDF",
           pageCount: 4 + (seed % 5),
         });
@@ -252,7 +256,11 @@ export function getRelatedPapers(paper, limit = 4) {
 export function subjectsForLevel(levelKey) {
   return SUBJECTS.filter((s) => s.level === levelKey);
 }
-
+export function subjectsForStream(stream) {
+  return SUBJECTS.filter(
+    (s) => s.level === "hsc" && Array.isArray(s.streams) && s.streams.includes(stream)
+  );
+}
 // Subjects that actually have at least one paper. Used for discovery lists
 // (Explore, Popular) so they never fill up with syllabus entries that have
 // nothing to open.

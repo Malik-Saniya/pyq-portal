@@ -17,7 +17,9 @@ export default function Subject() {
     () => [...new Set(papers.map((p) => p.academicYear))].sort((a, b) => b - a),
     [papers]
   );
-  const filtered = year === "all" ? papers : papers.filter((p) => p.academicYear === year);
+  // Guards against a year left over from another subject that has no such paper.
+  const activeYear = years.includes(year) ? year : "all";
+  const filtered = activeYear === "all" ? papers : papers.filter((p) => p.academicYear === activeYear);
 
   if (!subject) return <Navigate to="/404" replace />;
 
@@ -56,7 +58,7 @@ export default function Subject() {
           <button
             onClick={() => setYear("all")}
             className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-              year === "all" ? "border-stamp bg-stamp-light text-stamp-dark" : "border-paper-line bg-white text-ink-soft"
+              activeYear === "all" ? "border-stamp bg-stamp-light text-stamp-dark" : "border-paper-line bg-white text-ink-soft"
             }`}
           >
             All years
@@ -66,7 +68,7 @@ export default function Subject() {
               key={y}
               onClick={() => setYear(y)}
               className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                year === y ? "border-stamp bg-stamp-light text-stamp-dark" : "border-paper-line bg-white text-ink-soft"
+                activeYear === y ? "border-stamp bg-stamp-light text-stamp-dark" : "border-paper-line bg-white text-ink-soft"
               }`}
             >
               {y}
@@ -76,9 +78,14 @@ export default function Subject() {
       )}
 
       <div className="mt-6">
-        {filtered.length === 0 ? (
+        {papers.length === 0 ? (
           <EmptyState
-            title={`No ${subject.name} papers for ${year}`}
+            title="No question papers available yet"
+            description={`Papers for ${subject.name} will appear here once they're added.`}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            title={`No ${subject.name} papers for ${activeYear}`}
             description="Try a different year, or view papers across all years for this subject."
             actionLabel="Show all years"
             onAction={() => setYear("all")}

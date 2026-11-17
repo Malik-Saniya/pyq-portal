@@ -193,7 +193,7 @@ export default function FilterPanel({
         <fieldset>
           <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Academic level</legend>
           <div className="grid grid-cols-2 gap-1 rounded-md bg-paper-dim p-1">
-            {Object.values(LEVELS).map((l) => (
+            {Object.values(LEVELS).filter((l) => l.searchable !== false).map((l) => (
               <button
                 key={l.key}
                 type="button"

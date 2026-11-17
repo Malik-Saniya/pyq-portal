@@ -18,7 +18,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import School from "./pages/School";
 import SchoolClass from "./pages/SchoolClass";
-import SchoolSubject from "./pages/SchoolSubject";import ContentPolicy from "./pages/ContentPolicy";
+import SchoolSubject from "./pages/SchoolSubject";
+import ContentPolicy from "./pages/ContentPolicy";
 import NotFound from "./pages/NotFound";
 
 function Layout() {

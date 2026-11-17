@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PAPERS, getFeaturedPapers, getPopularSubjects } from "../data/mockData";
 import { POPULAR_SEARCHES } from "../lib/search";
@@ -20,12 +20,9 @@ function recentPapers() {
 
 export default function Home() {
   const [query, setQuery] = useState("");
-  const [recent, setRecent] = useState([]);
+  const [recent] = useState(recentPapers);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setRecent(recentPapers());
-  }, []);
+  
 
   function submit(e) {
     e.preventDefault();

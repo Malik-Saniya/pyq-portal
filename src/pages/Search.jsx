@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import { searchPapers, POPULAR_SEARCHES } from "../lib/search";
+import { useSearchParams } from "react-router-dom";
+import { searchPapers, searchSyllabusSubjects, POPULAR_SEARCHES } from "../lib/search";
 import { applyFilters, countActive, pruneHiddenFields } from "../lib/filters";
 import { PAPERS, UNIVERSITIES, BOARDS, COURSES } from "../data/mockData";
 import PaperCard from "../components/PaperCard";
@@ -8,6 +8,7 @@ import FilterPanel from "../components/FilterPanel";
 import FilterDrawer from "../components/FilterDrawer";
 import Chip from "../components/Chip";
 import EmptyState from "../components/EmptyState";
+import SyllabusMatches from "../components/SyllabusMatches";
 import { CardGridSkeleton } from "../components/Skeleton";
 
 const SORTS = [
@@ -71,18 +72,20 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [query, filters, sort]);
 
-  // The text query ranks papers; the filters then narrow that list. Every
-  // selected filter must match (see applyFilters).
-  const runSearch = useCallback(
-    (activeFilters) => applyFilters(query ? searchPapers(query).results : PAPERS, activeFilters),
-    [query]
-  );
+const ranked = useMemo(() => (query ? searchPapers(query).results : PAPERS), [query]);
+  const runSearch = useCallback((activeFilters) => applyFilters(ranked, activeFilters), [ranked]);
 
   const results = useMemo(() => {
     const list = runSearch(filters);
     return sort === "newest" ? [...list].sort((a, b) => Number(b.academicYear) - Number(a.academicYear)) : list;
   }, [runSearch, filters, sort]);
 
+    // When nothing matches, offer syllabus subjects that do (clearly labelled
+  // "No papers yet") so the student can still find where the subject sits.
+  const syllabusMatches = useMemo(
+    () => (results.length === 0 ? searchSyllabusSubjects(query, filters) : { items: [], total: 0 }),
+    [results.length, query, filters]
+  );
   // Live "N papers match" preview for the unapplied draft in the panel.
   const getCount = useCallback((draft) => runSearch(draft).length, [runSearch]);
 
@@ -213,15 +216,18 @@ export default function Search() {
           <div className="mt-5">
             {loading ? (
               <CardGridSkeleton count={6} />
-            ) : results.length === 0 ? (
-              <EmptyState
-                icon="🔎"
-                title={query ? `No papers match "${query}"` : "No papers match these filters"}
-                description="Try removing a filter, dropping the academic year, or searching by subject name only."
-                actionLabel="Browse by academic level"
-                actionTo="/explore/degree"
-              />
-            ) : (
+                        ) : results.length === 0 ? (
+<>
+                <EmptyState
+                  icon="🔎"
+                  title={query ? `No papers match "${query}"` : "No papers match these filters"}
+                  description="Try removing a filter, dropping the academic year, or searching by subject name only."
+                  actionLabel="Browse by academic level"
+                  actionTo="/explore/degree"
+                />
+                <SyllabusMatches items={syllabus.items} total={syllabus.total} />
+              </>
+                        ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {results.map((p) => (
                   <PaperCard key={p.id} paper={p} />
