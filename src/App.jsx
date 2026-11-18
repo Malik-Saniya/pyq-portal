@@ -1,5 +1,6 @@
-import { Routes, Route, Outlet, Navigate } from "react-router-dom";
+import { Routes, Route, Outlet, Navigate, useLocation } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
@@ -23,6 +24,7 @@ import ContentPolicy from "./pages/ContentPolicy";
 import NotFound from "./pages/NotFound";
 
 function Layout() {
+  const location = useLocation();
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       <a
@@ -33,7 +35,11 @@ function Layout() {
       </a>
       <Header />
       <main id="main-content" className="flex-1">
-        <Outlet />
+        {/* A crashing page shows a message here; Header/Footer stay usable and
+            any navigation (including Back) resets the boundary. */}
+        <ErrorBoundary resetKey={location.key}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>

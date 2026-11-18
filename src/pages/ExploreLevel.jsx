@@ -5,8 +5,9 @@ import { COURSES, UNIVERSITIES, BOARDS, browsableSubjects, subjectsForStream } f
 
 export default function ExploreLevel() {
   const { level } = useParams();
-  const config = LEVELS[level];
-  if (!config) return <Navigate to="/explore/degree" replace />;
+  // Own-property check: LEVELS["constructor"] etc. are truthy but not levels.
+  const config = Object.hasOwn(LEVELS, level) ? LEVELS[level] : null;
+  if (!config) return <Navigate to="/404" replace />;
 
   const subjects = browsableSubjects(level);
 

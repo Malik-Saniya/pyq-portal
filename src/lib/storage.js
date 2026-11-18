@@ -7,7 +7,10 @@ const DOWNLOADS_LIMIT = 50;
 function read(key) {
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    // Every stored value here is a list. Anything else (hand-edited or
+    // corrupted storage) is treated as empty instead of crashing the app.
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }

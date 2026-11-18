@@ -1,103 +1,240 @@
-import { useMemo, useState } from "react";
-import { useParams, Navigate, Link } from "react-router-dom";
-import Breadcrumbs from "../components/Breadcrumbs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { searchPapers, searchSyllabusSubjects, POPULAR_SEARCHES } from "../lib/search";
+import { applyFilters, countActive, filtersEqual, filtersFromParams, filtersToParams, pruneHiddenFields } from "../lib/filters";
+import { PAPERS, UNIVERSITIES, BOARDS, COURSES } from "../data/mockData";
 import PaperCard from "../components/PaperCard";
+import FilterPanel from "../components/FilterPanel";
+import FilterDrawer from "../components/FilterDrawer";
+import Chip from "../components/Chip";
 import EmptyState from "../components/EmptyState";
-import { getSubjectBySlug, getPapersBySubject } from "../data/mockData";
-import { levelLabel } from "../data/academicConfig";
-import { subjectBlurb } from "../lib/format";
+import SyllabusMatches from "../components/SyllabusMatches";
+import { CardGridSkeleton } from "../components/Skeleton";
 
-export default function Subject() {
-  const { subjectSlug } = useParams();
-  const subject = getSubjectBySlug(subjectSlug);
-  const [year, setYear] = useState("all");
+const SORTS = [
+  { value: "relevance", label: "Relevance" },
+  { value: "newest", label: "Newest year" },
+];
 
-  const papers = useMemo(() => getPapersBySubject(subjectSlug), [subjectSlug]);
-  const years = useMemo(
-    () => [...new Set(papers.map((p) => p.academicYear))].sort((a, b) => b - a),
-    [papers]
+function labelFor(key, value) {
+  if (key === "universitySlug") return UNIVERSITIES.find((u) => u.slug === value)?.name;
+  if (key === "boardSlug") return BOARDS.find((b) => b.slug === value)?.name;
+  if (key === "courseSlug") return COURSES.find((c) => c.slug === value)?.name;
+  if (key === "semester") return `Semester ${value}`;
+  if (key === "standard") return `${value}th`;
+  if (key === "level") return value === "degree" ? "Degree / UG" : "Junior College";
+  if (key === "academicYear") return `Year ${value}`;
+  if (key === "examType") return `${value} exam`;
+  return value;
+}
+
+// The URL carries the query and every applied filter.
+function paramsFor(query, filters) {
+  const out = filtersToParams(filters);
+  if (query) out.q = query;
+  return out;
+}
+
+export default function Search() {
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") ?? "";
+  const [inputValue, setInputValue] = useState(query);
+  // Applied filters live in the URL (not in component state), so Back/Forward,
+  // refresh and copied links restore exactly what was on screen.
+  const filters = useMemo(() => filtersFromParams(params), [params]);
+  const [sort, setSort] = useState("relevance");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const resultsTopRef = useRef(null);
+
+  useEffect(() => {
+    setInputValue(query);
+  }, [query]);
+
+  useEffect(() => {
+    setLoading(true);
+    const t = setTimeout(() => setLoading(false), 260);
+    return () => clearTimeout(t);
+  }, [query, filters, sort]);
+
+const ranked = useMemo(() => (query ? searchPapers(query).results : PAPERS), [query]);
+  const runSearch = useCallback((activeFilters) => applyFilters(ranked, activeFilters), [ranked]);
+
+  const results = useMemo(() => {
+    const list = runSearch(filters);
+    return sort === "newest" ? [...list].sort((a, b) => Number(b.academicYear) - Number(a.academicYear)) : list;
+  }, [runSearch, filters, sort]);
+
+    // When nothing matches, offer syllabus subjects that do (clearly labelled
+  // "No papers yet") so the student can still find where the subject sits.
+  const syllabusMatches = useMemo(
+    () => (results.length === 0 ? searchSyllabusSubjects(query, filters) : { items: [], total: 0 }),
+    [results.length, query, filters]
   );
-  // Guards against a year left over from another subject that has no such paper.
-  const activeYear = years.includes(year) ? year : "all";
-  const filtered = activeYear === "all" ? papers : papers.filter((p) => p.academicYear === activeYear);
+  // Live "N papers match" preview for the unapplied draft in the panel.
+  const getCount = useCallback((draft) => runSearch(draft).length, [runSearch]);
 
-  if (!subject) return <Navigate to="/404" replace />;
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  // Applying from the panel: update the results and, if the student has
+  // scrolled past the top of the list, bring it back into view.
+  const handleApply = useCallback((next) => {
+    // A new history entry per applied change, so Back undoes it. Nothing to do
+    // (and no duplicate entry) when the filters did not actually change.
+    if (filtersEqual(next, filters)) return;
+    setParams(paramsFor(query, next));
+    requestAnimationFrame(() => {
+      const el = resultsTopRef.current;
+      if (!el || el.getBoundingClientRect().top >= 72) return;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+    });
+  }, [filters, query, setParams]);
+
+  const resetFilters = useCallback(() => setParams(paramsFor(query, {})), [query, setParams]);
+
+  function submitSearch(e) {
+    e.preventDefault();
+    // A new text search keeps the applied filters.
+    setParams(paramsFor(inputValue.trim(), filters));
+  }
+
+  function removeFilter(key) {
+    const next = { ...filters };
+    delete next[key];
+    // Dropping the level also drops fields that only exist for that level,
+    // so no active filter is left hidden from the panel.
+    setParams(paramsFor(query, key === "level" ? pruneHiddenFields(next) : next));
+  }
+
+  const activeFilterEntries = Object.entries(filters).filter(([, v]) => v !== undefined && v !== "");
+  const activeCount = countActive(filters);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <Breadcrumbs
-        items={[
-          { to: "/", label: "Home" },
-          { to: `/explore/${subject.level}`, label: levelLabel(subject.level) },
-          { label: subject.name },
-        ]}
-      />
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-ink sm:text-3xl">{subject.name}</h1>
-          <p className="mt-1.5 max-w-xl text-sm text-ink-soft">{subjectBlurb(subject, papers)}</p>
-          <p className="mt-1 text-xs text-ink-faint">
-            {papers.length} paper{papers.length === 1 ? "" : "s"} available
-            {subject.code ? ` • Subject code ${subject.code}` : ""}
-            {subject.level === "hsc" && subject.streams?.length
-              ? ` • ${subject.streams.join(", ")}`
-              : ""}
-          </p>
+      <form onSubmit={submitSearch} className="flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2 rounded-full border border-paper-line bg-white px-4 py-2.5 focus-within:border-stamp">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-ink-faint shrink-0">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" strokeLinecap="round" />
+          </svg>
+          <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Search papers, subjects, universities…"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
+            aria-label="Search papers"
+          />
         </div>
-        <Link
-          to={`/search?q=${encodeURIComponent(subject.name)}`}
-          className="rounded-md border border-paper-line bg-white px-4 py-2 text-sm font-medium text-ink-soft hover:border-stamp hover:text-stamp"
-        >
-          Search within {subject.name}
-        </Link>
-      </div>
+        <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-paper hover:bg-ink-soft">
+          Search
+        </button>
+      </form>
 
-      {years.length > 0 && (
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            onClick={() => setYear("all")}
-            className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-              activeYear === "all" ? "border-stamp bg-stamp-light text-stamp-dark" : "border-paper-line bg-white text-ink-soft"
-            }`}
-          >
-            All years
-          </button>
-          {years.map((y) => (
+      {!query && activeFilterEntries.length === 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-ink-faint">Popular:</span>
+          {POPULAR_SEARCHES.map((s) => (
             <button
-              key={y}
-              onClick={() => setYear(y)}
-              className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                activeYear === y ? "border-stamp bg-stamp-light text-stamp-dark" : "border-paper-line bg-white text-ink-soft"
-              }`}
+              key={s}
+              onClick={() => setParams({ q: s })}
+              className="rounded-full border border-paper-line bg-white px-3 py-1 text-xs font-medium text-ink-soft hover:border-stamp hover:text-stamp"
             >
-              {y}
+              {s}
             </button>
           ))}
         </div>
       )}
 
-      <div className="mt-6">
-        {papers.length === 0 ? (
-          <EmptyState
-            title="No question papers available yet"
-            description={`Papers for ${subject.name} will appear here once they're added.`}
-          />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            title={`No ${subject.name} papers for ${activeYear}`}
-            description="Try a different year, or view papers across all years for this subject."
-            actionLabel="Show all years"
-            onAction={() => setYear("all")}
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((p) => (
-              <PaperCard key={p.id} paper={p} />
-            ))}
+      <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[264px_minmax(0,1fr)]">
+        {/* Desktop filters: sticky under the header, and the panel scrolls
+            on its own (see FilterPanel) so it never outgrows the viewport. */}
+        <aside className="hidden md:sticky md:top-20 md:block md:self-start" aria-label="Filters">
+          <FilterPanel applied={filters} onApply={handleApply} onReset={resetFilters} getCount={getCount} />
+        </aside>
+
+        <div>
+          <div ref={resultsTopRef} className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-haspopup="dialog"
+                className="flex items-center gap-1.5 rounded-md border border-paper-line bg-white px-3 py-2 text-sm font-medium text-ink-soft md:hidden"
+              >
+                Filters
+                {activeCount > 0 && (
+                  <span className="rounded-full bg-stamp px-1.5 text-xs text-white">{activeCount}</span>
+                )}
+              </button>
+              <p className="text-sm text-ink-faint tabular">{loading ? "Searching…" : `${results.length} result${results.length === 1 ? "" : "s"}`}</p>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-ink-soft">
+              Sort
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="rounded-md border border-paper-line bg-white px-2 py-1.5 text-sm outline-none focus:border-stamp"
+              >
+                {SORTS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        )}
+
+          {activeFilterEntries.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Applied filters">
+              {activeFilterEntries.map(([k, v]) => (
+                <Chip key={k} onRemove={() => removeFilter(k)} removeLabel={`Remove filter: ${labelFor(k, v)}`}>
+                  {labelFor(k, v)}
+                </Chip>
+              ))}
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="rounded-md px-2 py-1 text-sm font-medium text-ink-soft underline-offset-2 hover:text-stamp hover:underline"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+
+          <div className="mt-5">
+            {loading ? (
+              <CardGridSkeleton count={6} />
+                        ) : results.length === 0 ? (
+<>
+                <EmptyState
+                  icon="🔎"
+                  title={query ? `No papers match "${query}"` : "No papers match these filters"}
+                  description="Try removing a filter, dropping the academic year, or searching by subject name only."
+                  actionLabel="Browse by academic level"
+                  actionTo="/explore/degree"
+                />
+                <SyllabusMatches items={syllabusMatches.items} total={syllabusMatches.total} />
+              </>
+                        ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {results.map((p) => (
+                  <PaperCard key={p.id} paper={p} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      <FilterDrawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        filters={filters}
+        onApply={handleApply}
+        onReset={resetFilters}
+        getCount={getCount}
+      />
     </div>
   );
 }
